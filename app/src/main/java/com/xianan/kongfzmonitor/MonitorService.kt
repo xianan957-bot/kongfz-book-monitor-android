@@ -139,6 +139,7 @@ class MonitorService : Service() {
     private fun tryOpenItemPage(item: KongfzItem) {
         val intent = Intent(this, ItemWebViewActivity::class.java).apply {
             putExtra(ItemWebViewActivity.EXTRA_ITEM_URL, item.itemUrl)
+            putExtra(ItemWebViewActivity.EXTRA_AUTO_CHECKOUT, true)
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
         }
 

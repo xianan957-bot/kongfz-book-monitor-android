@@ -7,14 +7,21 @@ import android.webkit.WebChromeClient
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.Toast
+import java.net.URI
 
 class ItemWebViewActivity : Activity() {
     companion object {
         const val EXTRA_ITEM_URL = "item_url"
+        const val EXTRA_AUTO_CHECKOUT = "auto_checkout"
+        private const val AUTO_CHECKOUT_DELAY_MS = 1_200L
     }
 
     private lateinit var webView: WebView
     private var loginWarningShown = false
+    private val autoCheckoutRequested by lazy {
+        intent.getBooleanExtra(EXTRA_AUTO_CHECKOUT, false)
+    }
+    private var autoCheckoutAttempted = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -41,6 +48,10 @@ class ItemWebViewActivity : Activity() {
                             "登录状态可能已失效，请重新登录孔夫子",
                             Toast.LENGTH_LONG,
                         ).show()
+                    }
+                    if (autoCheckoutRequested && isItemDetailUrl(url) && !autoCheckoutAttempted) {
+                        autoCheckoutAttempted = true
+                        view?.postDelayed({ triggerAutoCheckout() }, AUTO_CHECKOUT_DELAY_MS)
                     }
                 }
             }
@@ -84,6 +95,42 @@ class ItemWebViewActivity : Activity() {
             webView.destroy()
         }
         super.onDestroy()
+    }
+
+    private fun triggerAutoCheckout() {
+        if (!::webView.isInitialized) return
+
+        webView.evaluateJavascript(
+            """
+            (function() {
+                var button = document.querySelector('.go-buy');
+                if (!button) return 'no-buy-button';
+                if (button.getAttribute('data-kongfz-auto-clicked') === '1') {
+                    return 'already-clicked';
+                }
+                button.setAttribute('data-kongfz-auto-clicked', '1');
+                button.click();
+                return 'clicked';
+            })();
+            """.trimIndent(),
+        ) { result ->
+            if (result == "\"no-buy-button\"") {
+                Toast.makeText(this, "未找到立即购买入口，可能被网站拦截", Toast.LENGTH_LONG).show()
+            }
+        }
+    }
+
+    private fun isItemDetailUrl(rawUrl: String?): Boolean {
+        if (rawUrl.isNullOrBlank()) return false
+        return try {
+            val uri = URI(rawUrl)
+            val host = uri.host?.lowercase() ?: return false
+            val segments = uri.path.orEmpty().split('/').filter(String::isNotBlank)
+            host == "book.kongfz.com" && segments.size >= 2 &&
+                segments[0].toLongOrNull() != null && segments[1].toLongOrNull() != null
+        } catch (_: Exception) {
+            false
+        }
     }
 
     private fun isKongfzUrl(rawUrl: String): Boolean {
