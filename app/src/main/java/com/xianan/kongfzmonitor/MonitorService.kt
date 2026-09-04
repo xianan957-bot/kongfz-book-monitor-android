@@ -23,13 +23,14 @@ class MonitorService : Service() {
 
     private lateinit var configRepository: MonitorConfigRepository
     private lateinit var processedItemStore: ProcessedItemStore
-    private val searchClient = KongfzSearchClient()
+    private lateinit var searchClient: KongfzSearchClient
     private var executor: ExecutorService? = null
 
     override fun onCreate() {
         super.onCreate()
         configRepository = MonitorConfigRepository(this)
         processedItemStore = ProcessedItemStore(this)
+        searchClient = KongfzSearchClient(this)
         NotificationHelper.ensureChannels(this)
     }
 
@@ -57,6 +58,7 @@ class MonitorService : Service() {
         running.set(false)
         executor?.shutdownNow()
         executor = null
+        searchClient.close()
         processedItemStore.close()
         super.onDestroy()
     }
@@ -103,6 +105,8 @@ class MonitorService : Service() {
                     loginRequiredNotificationShown = true
                 }
                 Log.w(TAG, "Kongfz login is required; the next cycle will retry.", error)
+            } catch (error: KongfzVerificationRequiredException) {
+                Log.w(TAG, "Kongfz official search requires verification; the next cycle will retry.", error)
             } catch (error: Exception) {
                 Log.w(TAG, "This monitoring cycle failed; the next cycle will retry.", error)
             }
