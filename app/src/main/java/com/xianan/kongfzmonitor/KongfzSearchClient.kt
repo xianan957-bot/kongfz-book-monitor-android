@@ -3,7 +3,6 @@ package com.xianan.kongfzmonitor
 import android.content.Context
 import android.os.Handler
 import android.os.Looper
-import android.util.Log
 import android.webkit.CookieManager
 import android.webkit.WebResourceError
 import android.webkit.WebResourceRequest
@@ -33,7 +32,6 @@ class KongfzSearchClient(context: Context) {
         private const val FIRST_COLLECTION_DELAY_MS = 1_000L
         private const val COLLECTION_RETRY_DELAY_MS = 500L
         private const val MAX_COLLECTION_ATTEMPTS = 16
-        private const val TAG = "KongfzSearchClient"
 
         /**
          * Selectors are based on the current official search page. The page's
@@ -125,7 +123,6 @@ class KongfzSearchClient(context: Context) {
 
         val request = PendingRequest()
         val searchUrl = buildSearchUrl(keyword)
-        Log.d(TAG, "[DEBUG-KWVW] fetch scheduled: $searchUrl")
         mainHandler.post { startFetch(request, searchUrl) }
 
         if (!request.latch.await(FETCH_TIMEOUT_MS, TimeUnit.MILLISECONDS)) {
@@ -176,7 +173,6 @@ class KongfzSearchClient(context: Context) {
     private val searchWebViewClient = object : WebViewClient() {
         override fun onPageFinished(view: WebView?, url: String?) {
             super.onPageFinished(view, url)
-            Log.d(TAG, "[DEBUG-KWVW] page finished url=$url official=${isOfficialSearchUrl(url)} active=${activeRequest != null}")
             val request = activeRequest ?: return
             if (view == null || view !== webView || !isOfficialSearchUrl(url)) return
             scheduleCollection(request, 0)
@@ -191,7 +187,6 @@ class KongfzSearchClient(context: Context) {
             if (request?.isForMainFrame != true) return
             val active = activeRequest ?: return
             val description = error?.description?.toString().orEmpty()
-            Log.w(TAG, "[DEBUG-KWVW] main-frame error: $description")
             complete(
                 active,
                 IOException(
@@ -210,7 +205,6 @@ class KongfzSearchClient(context: Context) {
 
         activeRequest?.completeError(IOException("上一轮孔夫子搜索已取消"))
         activeRequest = request
-        Log.d(TAG, "[DEBUG-KWVW] load official page")
 
         try {
             CookieManager.getInstance().flush()
@@ -223,7 +217,6 @@ class KongfzSearchClient(context: Context) {
     private fun scheduleCollection(request: PendingRequest, attempt: Int) {
         if (activeRequest !== request || closed.get()) return
         if (attempt > MAX_COLLECTION_ATTEMPTS) {
-            Log.w(TAG, "[DEBUG-KWVW] collection timed out")
             complete(request, IOException("孔夫子官方搜索结果加载超时"))
             return
         }
@@ -236,7 +229,6 @@ class KongfzSearchClient(context: Context) {
                 return@postDelayed
             }
             view.evaluateJavascript(EXTRACT_RENDERED_ITEMS_SCRIPT) { rawResult ->
-                Log.d(TAG, "[DEBUG-KWVW] evaluate result attempt=$attempt rawLength=${rawResult.length}")
                 handleCollectionResult(request, rawResult, attempt)
             }
         }, delay)
@@ -254,13 +246,9 @@ class KongfzSearchClient(context: Context) {
         when (payload.optString("state")) {
             "ready" -> {
                 val items = parseItems(payload.optJSONArray("items"))
-                Log.d(TAG, "[DEBUG-KWVW] state=ready parsed=${items.size}")
                 complete(request, items)
             }
-            "empty" -> {
-                Log.d(TAG, "[DEBUG-KWVW] state=empty")
-                complete(request, emptyList())
-            }
+            "empty" -> complete(request, emptyList())
             "login" -> complete(
                 request,
                 KongfzLoginRequiredException(
