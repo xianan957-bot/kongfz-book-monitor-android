@@ -305,8 +305,10 @@ class KongfzSearchClient(context: Context) {
     private fun isOfficialSearchUrl(rawUrl: String?): Boolean {
         return try {
             val uri = URI(rawUrl ?: return false)
+            val path = uri.path.orEmpty()
             uri.scheme == "https" && uri.host?.lowercase() == "search.kongfz.com" &&
-                uri.path?.startsWith("/product") == true
+                (path == "/product" || path.startsWith("/product/") ||
+                    path == "/ie/product" || path.startsWith("/ie/product/"))
         } catch (_: Exception) {
             false
         }

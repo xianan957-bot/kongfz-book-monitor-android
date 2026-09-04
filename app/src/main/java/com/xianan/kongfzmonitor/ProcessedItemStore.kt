@@ -57,4 +57,8 @@ class ProcessedItemStore(context: Context) : SQLiteOpenHelper(
             SQLiteDatabase.CONFLICT_IGNORE,
         )
     }
+
+    fun clear() {
+        writableDatabase.delete("processed_items", null, null)
+    }
 }

@@ -14,6 +14,7 @@ class MonitorService : Service() {
     companion object {
         const val ACTION_START = "com.xianan.kongfzmonitor.action.START"
         const val ACTION_STOP = "com.xianan.kongfzmonitor.action.STOP"
+        const val EXTRA_NEW_MONITORING_SESSION = "new_monitoring_session"
 
         private const val TAG = "MonitorService"
     }
@@ -39,6 +40,12 @@ class MonitorService : Service() {
             configRepository.setMonitoring(false)
             stopMonitoring()
             return START_NOT_STICKY
+        }
+
+        if (intent?.action == ACTION_START &&
+            intent.getBooleanExtra(EXTRA_NEW_MONITORING_SESSION, false)
+        ) {
+            processedItemStore.clear()
         }
 
         val config = configRepository.load()

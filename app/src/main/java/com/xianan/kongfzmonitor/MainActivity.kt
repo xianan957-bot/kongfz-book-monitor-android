@@ -196,7 +196,9 @@ class MainActivity : Activity() {
 
         try {
             startForegroundService(
-                Intent(this, MonitorService::class.java).setAction(MonitorService.ACTION_START)
+                Intent(this, MonitorService::class.java)
+                    .setAction(MonitorService.ACTION_START)
+                    .putExtra(MonitorService.EXTRA_NEW_MONITORING_SESSION, true)
             )
             updateStatus()
         } catch (error: Exception) {
