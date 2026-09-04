@@ -14,6 +14,9 @@ class ItemWebViewActivity : Activity() {
         const val EXTRA_ITEM_URL = "item_url"
         const val EXTRA_AUTO_CHECKOUT = "auto_checkout"
         private const val AUTO_CHECKOUT_DELAY_MS = 1_200L
+        private const val DESKTOP_USER_AGENT =
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) " +
+                "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36"
     }
 
     private lateinit var webView: WebView
@@ -36,6 +39,7 @@ class ItemWebViewActivity : Activity() {
         webView = WebView(this).apply {
             settings.javaScriptEnabled = true
             settings.domStorageEnabled = true
+            settings.userAgentString = DESKTOP_USER_AGENT
             webChromeClient = WebChromeClient()
             webViewClient = object : WebViewClient() {
                 override fun onPageFinished(view: WebView?, url: String?) {
