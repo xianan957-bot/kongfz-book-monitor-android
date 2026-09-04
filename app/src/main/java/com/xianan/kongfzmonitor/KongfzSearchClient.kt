@@ -10,6 +10,12 @@ import java.net.URLEncoder
 import javax.net.ssl.HttpsURLConnection
 
 class KongfzSearchClient {
+    companion object {
+        private const val DESKTOP_USER_AGENT =
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) " +
+                "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36"
+    }
+
     fun fetch(config: MonitorConfig): List<KongfzItem> {
         val keyword = URLEncoder.encode(config.keyword.trim(), Charsets.UTF_8.name())
         val requestUrl = URL(
@@ -23,11 +29,7 @@ class KongfzSearchClient {
             connectTimeout = 8_000
             readTimeout = 8_000
             instanceFollowRedirects = true
-            setRequestProperty(
-                "User-Agent",
-                "Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 " +
-                    "(KHTML, like Gecko) Chrome/120.0 Mobile Safari/537.36"
-            )
+            setRequestProperty("User-Agent", DESKTOP_USER_AGENT)
             setRequestProperty("Accept", "application/json,text/plain,*/*")
             setRequestProperty(
                 "Referer",
