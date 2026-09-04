@@ -11,9 +11,11 @@ import android.media.RingtoneManager
 
 object NotificationHelper {
     const val MONITOR_NOTIFICATION_ID = 1001
+    private const val LOGIN_REQUIRED_NOTIFICATION_ID = 1002
 
     private const val MONITOR_CHANNEL_ID = "monitor_status"
     private const val ITEM_CHANNEL_ID = "new_items"
+    private const val LOGIN_CHANNEL_ID = "login_required"
 
     fun ensureChannels(context: Context) {
         val manager = context.getSystemService(NotificationManager::class.java)
@@ -42,7 +44,17 @@ object NotificationHelper {
             setSound(notificationSound, audioAttributes)
         }
 
-        manager.createNotificationChannels(listOf(monitorChannel, itemChannel))
+        val loginChannel = NotificationChannel(
+            LOGIN_CHANNEL_ID,
+            "登录状态提醒",
+            NotificationManager.IMPORTANCE_HIGH,
+        ).apply {
+            description = "孔夫子登录状态失效时提醒用户重新登录"
+            enableVibration(true)
+            setSound(notificationSound, audioAttributes)
+        }
+
+        manager.createNotificationChannels(listOf(monitorChannel, itemChannel, loginChannel))
     }
 
     fun buildMonitorNotification(context: Context): Notification {
@@ -62,6 +74,28 @@ object NotificationHelper {
             .setOngoing(true)
             .setCategory(Notification.CATEGORY_SERVICE)
             .build()
+    }
+
+    fun notifyLoginRequired(context: Context) {
+        val intent = Intent(context, LoginActivity::class.java)
+        val pendingIntent = PendingIntent.getActivity(
+            context,
+            LOGIN_REQUIRED_NOTIFICATION_ID,
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+        )
+
+        val notification = Notification.Builder(context, LOGIN_CHANNEL_ID)
+            .setSmallIcon(android.R.drawable.stat_notify_error)
+            .setContentTitle("孔夫子登录状态已失效")
+            .setContentText("请重新登录，监控会继续尝试检查")
+            .setContentIntent(pendingIntent)
+            .setAutoCancel(true)
+            .setCategory(Notification.CATEGORY_ERROR)
+            .build()
+
+        context.getSystemService(NotificationManager::class.java)
+            .notify(LOGIN_REQUIRED_NOTIFICATION_ID, notification)
     }
 
     fun notifyNewItem(context: Context, item: KongfzItem) {

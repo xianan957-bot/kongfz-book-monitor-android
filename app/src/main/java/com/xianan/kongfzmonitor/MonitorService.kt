@@ -19,6 +19,7 @@ class MonitorService : Service() {
     }
 
     private val running = AtomicBoolean(false)
+    private var loginRequiredNotificationShown = false
 
     private lateinit var configRepository: MonitorConfigRepository
     private lateinit var processedItemStore: ProcessedItemStore
@@ -94,7 +95,14 @@ class MonitorService : Service() {
 
             try {
                 val items = searchClient.fetch(config)
+                loginRequiredNotificationShown = false
                 processItems(items, config)
+            } catch (error: KongfzLoginRequiredException) {
+                if (!loginRequiredNotificationShown) {
+                    NotificationHelper.notifyLoginRequired(this)
+                    loginRequiredNotificationShown = true
+                }
+                Log.w(TAG, "Kongfz login is required; the next cycle will retry.", error)
             } catch (error: Exception) {
                 Log.w(TAG, "This monitoring cycle failed; the next cycle will retry.", error)
             }

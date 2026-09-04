@@ -21,4 +21,4 @@ Android 本机网页轮询监控工具。项目范围以《孔夫子旧书网 An
 
 当前 Android 15+ 对 `dataSync` 前台服务存在后台运行时长限制，因此监控服务使用 Android `specialUse` 前台服务类型，声明用途为用户主动开启的持续商品上架监控。
 
-孔夫子搜索监控基于网页自身的 `search.kongfz.com/product_result/` 响应。网页解析被单独封装，便于网站结构变化时集中调整。
+孔夫子搜索监控基于当前网页使用的 `search.kongfz.com/pc-gw/search-web/client/pc/product/keyword/list` 接口，并使用 `sortType=3`（最新上架）读取第一页商品。网页解析被单独封装，便于网站结构变化时集中调整。
