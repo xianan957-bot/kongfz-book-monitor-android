@@ -44,6 +44,17 @@ class KongfzSearchClient(context: Context) {
                 return node ? (node.innerText || node.textContent || '').replace(/\s+/g, ' ').trim() : '';
               }
 
+              function metadataValue(node, labels) {
+                var records = node.querySelectorAll('.zl-info-item');
+                for (var i = 0; i < records.length; i += 1) {
+                  var keyNode = records[i].querySelector('span');
+                  var valueNode = records[i].querySelector('.zl-info-value');
+                  var key = text(keyNode).replace(/[：:\\s]/g, '');
+                  if (labels.indexOf(key) >= 0) return text(valueNode);
+                }
+                return '';
+              }
+
               function absoluteUrl(raw) {
                 if (!raw) return '';
                 try { return new URL(raw, location.href).href; } catch (_) { return ''; }
@@ -78,6 +89,8 @@ class KongfzSearchClient(context: Context) {
                   itemId: itemIdFromUrl(itemUrl),
                   itemUrl: itemUrl,
                   title: text(titleLink || node.querySelector('.item-name')),
+                  author: metadataValue(node, ['作者', '著者']),
+                  publisher: metadataValue(node, ['出版社', '出版机构']),
                   priceText: text(priceNode),
                   condition: text(qualityNode),
                   shop: text(shopNode)
@@ -122,7 +135,7 @@ class KongfzSearchClient(context: Context) {
         if (keyword.isBlank()) return emptyList()
 
         val request = PendingRequest()
-        val searchUrl = buildSearchUrl(keyword)
+        val searchUrl = buildSearchUrl(config)
         mainHandler.post { startFetch(request, searchUrl) }
 
         if (!request.latch.await(FETCH_TIMEOUT_MS, TimeUnit.MILLISECONDS)) {
@@ -283,11 +296,30 @@ class KongfzSearchClient(context: Context) {
         request.completeError(error)
     }
 
-    private fun buildSearchUrl(keyword: String): String {
-        val encodedKeyword = URLEncoder.encode(keyword, Charsets.UTF_8.name())
-        return "$SEARCH_PAGE_BASE_URL?keyword=$encodedKeyword" +
-            "&dataType=0&sortType=3" +
-            "&actionPath=keyword%2CdataType%2CsortType&page=1&userArea=1006e6"
+    private fun buildSearchUrl(config: MonitorConfig): String {
+        val actionPath = mutableListOf("keyword", "dataType", "sortType")
+        val parameters = mutableListOf(
+            "keyword" to config.keyword.trim(),
+            "dataType" to "0",
+            "sortType" to "3",
+        )
+
+        config.author.trim().takeIf(String::isNotBlank)?.let { author ->
+            parameters += "author" to author
+            actionPath += "author"
+        }
+        config.publisher.trim().takeIf(String::isNotBlank)?.let { publisher ->
+            parameters += "press" to publisher
+            actionPath += "press"
+        }
+
+        parameters += "actionPath" to actionPath.joinToString(",")
+        parameters += "page" to "1"
+        parameters += "userArea" to "1006e6"
+
+        return SEARCH_PAGE_BASE_URL + parameters.joinToString(prefix = "?", separator = "&") { (name, value) ->
+            "$name=${URLEncoder.encode(value, Charsets.UTF_8.name())}"
+        }
     }
 
     private fun isOfficialSearchUrl(rawUrl: String?): Boolean {
@@ -336,6 +368,8 @@ class KongfzSearchClient(context: Context) {
             itemId = itemId,
             itemUrl = itemUrl,
             title = title,
+            author = json.optString("author").trim(),
+            publisher = json.optString("publisher").trim(),
             price = price,
             condition = json.optString("condition").trim(),
             shop = json.optString("shop").trim(),

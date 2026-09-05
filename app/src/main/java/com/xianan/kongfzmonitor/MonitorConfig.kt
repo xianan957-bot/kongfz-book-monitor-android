@@ -4,6 +4,8 @@ import android.content.Context
 
 data class MonitorConfig(
     val keyword: String,
+    val author: String,
+    val publisher: String,
     val maxPrice: Double?,
     val condition: String,
     val shop: String,
@@ -16,6 +18,8 @@ class MonitorConfigRepository(context: Context) {
 
     fun load(): MonitorConfig = MonitorConfig(
         keyword = prefs.getString("keyword", "") ?: "",
+        author = prefs.getString("author", "") ?: "",
+        publisher = prefs.getString("publisher", "") ?: "",
         maxPrice = prefs.getString("max_price", null)?.toDoubleOrNull(),
         condition = prefs.getString("condition", "") ?: "",
         shop = prefs.getString("shop", "") ?: "",
@@ -26,6 +30,8 @@ class MonitorConfigRepository(context: Context) {
     fun save(config: MonitorConfig) {
         prefs.edit()
             .putString("keyword", config.keyword.trim())
+            .putString("author", config.author.trim())
+            .putString("publisher", config.publisher.trim())
             .putString("max_price", config.maxPrice?.toString())
             .putString("condition", config.condition.trim())
             .putString("shop", config.shop.trim())

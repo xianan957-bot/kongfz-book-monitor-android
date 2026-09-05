@@ -23,6 +23,8 @@ class MainActivity : Activity() {
     private lateinit var configRepository: MonitorConfigRepository
     private lateinit var statusText: TextView
     private lateinit var keywordInput: EditText
+    private lateinit var authorInput: EditText
+    private lateinit var publisherInput: EditText
     private lateinit var maxPriceInput: EditText
     private lateinit var conditionInput: EditText
     private lateinit var shopInput: EditText
@@ -80,6 +82,8 @@ class MainActivity : Activity() {
         root.addView(statusText)
 
         keywordInput = addTextField(root, "关键词", "例如：鲁迅全集")
+        authorInput = addTextField(root, "作者（可选）", "例如：鲁迅")
+        publisherInput = addTextField(root, "出版社（可选）", "例如：人民文学出版社")
         maxPriceInput = addTextField(root, "最高价格（可选）", "例如：300").apply {
             inputType = InputType.TYPE_CLASS_NUMBER or InputType.TYPE_NUMBER_FLAG_DECIMAL
         }
@@ -141,6 +145,8 @@ class MainActivity : Activity() {
     private fun loadConfigIntoInputs() {
         val config = configRepository.load()
         keywordInput.setText(config.keyword)
+        authorInput.setText(config.author)
+        publisherInput.setText(config.publisher)
         maxPriceInput.setText(config.maxPrice?.let(::formatNumber) ?: "")
         conditionInput.setText(config.condition)
         shopInput.setText(config.shop)
@@ -186,6 +192,8 @@ class MainActivity : Activity() {
 
         val config = MonitorConfig(
             keyword = keyword,
+            author = authorInput.text.toString().trim(),
+            publisher = publisherInput.text.toString().trim(),
             maxPrice = maxPrice,
             condition = conditionInput.text.toString().trim(),
             shop = shopInput.text.toString().trim(),

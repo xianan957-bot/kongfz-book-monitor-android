@@ -4,8 +4,24 @@ object ItemFilter {
     fun matches(item: KongfzItem, config: MonitorConfig): Boolean {
         val keyword = config.keyword.trim()
         if (keyword.isNotEmpty()) {
-            val searchableText = listOf(item.title, item.condition, item.shop).joinToString(" ")
+            val searchableText = listOf(
+                item.title,
+                item.author,
+                item.publisher,
+                item.condition,
+                item.shop,
+            ).joinToString(" ")
             if (!searchableText.contains(keyword, ignoreCase = true)) return false
+        }
+
+        val expectedAuthor = config.author.trim()
+        if (expectedAuthor.isNotEmpty() && !containsText(item.author, expectedAuthor)) {
+            return false
+        }
+
+        val expectedPublisher = config.publisher.trim()
+        if (expectedPublisher.isNotEmpty() && !containsText(item.publisher, expectedPublisher)) {
+            return false
         }
 
         config.maxPrice?.let { maxPrice ->
@@ -24,6 +40,10 @@ object ItemFilter {
         }
 
         return true
+    }
+
+    private fun containsText(actual: String, expected: String): Boolean {
+        return actual.trim().contains(expected.trim(), ignoreCase = true)
     }
 
     private fun conditionMatches(actual: String, expected: String): Boolean {
